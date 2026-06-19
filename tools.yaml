@@ -225,9 +225,12 @@ tools:
         limit:
           type: integer
           description: "Max number of runs (default 10)"
+        wait:
+          type: boolean
+          description: "If true, poll every 15s until the latest run completes (default false)"
     execute:
       command: bash tools/run_list.sh
-      timeoutMillis: 30000
+      timeoutMillis: 600000
 
   - name: run_view
     description: >
@@ -241,11 +244,14 @@ tools:
         id:
           type: integer
           description: "Run databaseId (from run_list)"
+        wait:
+          type: boolean
+          description: "If true, poll every 15s until the run completes (default false)"
       required:
         - id
     execute:
       command: bash tools/run_view.sh
-      timeoutMillis: 30000
+      timeoutMillis: 600000
 
   # ── Search ────────────────────────────────────────────────────
   - name: search
