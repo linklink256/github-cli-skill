@@ -1,0 +1,272 @@
+version: 1
+tools:
+  # ── Repositories ──────────────────────────────────────────────
+  - name: repo_list
+    description: >
+      List repositories for the authenticated user.
+      Returns JSON with repo name, description, and last updated time.
+    parameters:
+      type: object
+      properties:
+        limit:
+          type: integer
+          description: "Max number of repos to return (default 30)"
+        json:
+          type: string
+          description: "Comma-separated fields to return (default: nameWithOwner,description,updatedAt)"
+    execute:
+      command: bash tools/repo_list.sh
+      timeoutMillis: 30000
+
+  - name: repo_view
+    description: >
+      View details of a GitHub repository.
+      Use "." for the current repo in a git workspace.
+    parameters:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: "Repository in owner/name format, or \".\" for current repo"
+    execute:
+      command: bash tools/repo_view.sh
+      timeoutMillis: 30000
+
+  - name: repo_clone
+    description: >
+      Clone a GitHub repository into the workspace.
+      Uses gh repo clone (handles auth automatically).
+    parameters:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: "Repository to clone, e.g. owner/name"
+        dir:
+          type: string
+          description: "Target directory name (optional, defaults to repo name)"
+      required:
+        - repo
+    execute:
+      command: bash tools/repo_clone.sh
+      timeoutMillis: 120000
+      needsApproval: true
+
+  # ── Pull Requests ─────────────────────────────────────────────
+  - name: pr_list
+    description: >
+      List pull requests in a repository.
+      Returns JSON with PR number, title, author, state, branch, and updated time.
+    parameters:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: "Repository in owner/name format, or \".\" for current repo"
+        state:
+          type: string
+          description: "Filter by state: open, closed, merged, all (default open)"
+          enum: [open, closed, merged, all]
+        limit:
+          type: integer
+          description: "Max number of PRs (default 20)"
+    execute:
+      command: bash tools/pr_list.sh
+      timeoutMillis: 30000
+
+  - name: pr_view
+    description: >
+      View detailed info about a pull request, including review status,
+      mergeability, diff stats, and commits.
+    parameters:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: "Repository in owner/name format, or \".\" for current repo"
+        number:
+          type: integer
+          description: "PR number"
+      required:
+        - number
+    execute:
+      command: bash tools/pr_view.sh
+      timeoutMillis: 30000
+
+  - name: pr_create
+    description: >
+      Create a pull request. Requires title and body.
+      The head branch must already be pushed to the remote.
+    parameters:
+      type: object
+      properties:
+        title:
+          type: string
+          description: "PR title"
+        body:
+          type: string
+          description: "PR description (Markdown)"
+        repo:
+          type: string
+          description: "Repository in owner/name format (optional if in a git repo)"
+        base:
+          type: string
+          description: "Base branch (default main)"
+        head:
+          type: string
+          description: "Head branch (optional if current branch)"
+      required:
+        - title
+    execute:
+      command: bash tools/pr_create.sh
+      timeoutMillis: 30000
+      needsApproval: true
+
+  - name: pr_merge
+    description: >
+      Merge a pull request. This is a write operation — needs approval.
+    parameters:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: "Repository in owner/name format, or \".\" for current repo"
+        number:
+          type: integer
+          description: "PR number"
+        method:
+          type: string
+          description: "Merge method: squash, merge, or rebase (default squash)"
+          enum: [squash, merge, rebase]
+      required:
+        - number
+    execute:
+      command: bash tools/pr_merge.sh
+      timeoutMillis: 30000
+      needsApproval: true
+
+  # ── Issues ────────────────────────────────────────────────────
+  - name: issue_list
+    description: >
+      List issues in a repository.
+      Returns JSON with issue number, title, author, labels, and state.
+    parameters:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: "Repository in owner/name format, or \".\" for current repo"
+        state:
+          type: string
+          description: "Filter by state: open, closed, all (default open)"
+          enum: [open, closed, all]
+        limit:
+          type: integer
+          description: "Max number of issues (default 20)"
+    execute:
+      command: bash tools/issue_list.sh
+      timeoutMillis: 30000
+
+  - name: issue_view
+    description: >
+      View detailed info about an issue, including body, labels, assignees, and comments.
+    parameters:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: "Repository in owner/name format, or \".\" for current repo"
+        number:
+          type: integer
+          description: "Issue number"
+      required:
+        - number
+    execute:
+      command: bash tools/issue_view.sh
+      timeoutMillis: 30000
+
+  - name: issue_create
+    description: >
+      Create an issue in a repository. This is a write operation — needs approval.
+    parameters:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: "Repository in owner/name format, e.g. owner/name"
+        title:
+          type: string
+          description: "Issue title"
+        body:
+          type: string
+          description: "Issue description (Markdown)"
+        labels:
+          type: string
+          description: "Comma-separated label names (optional)"
+      required:
+        - repo
+        - title
+    execute:
+      command: bash tools/issue_create.sh
+      timeoutMillis: 30000
+      needsApproval: true
+
+  # ── CI / Actions ──────────────────────────────────────────────
+  - name: run_list
+    description: >
+      List recent GitHub Actions workflow runs in a repository.
+      Returns JSON with run ID, name, status, conclusion, branch, and event.
+    parameters:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: "Repository in owner/name format, or \".\" for current repo"
+        limit:
+          type: integer
+          description: "Max number of runs (default 10)"
+    execute:
+      command: bash tools/run_list.sh
+      timeoutMillis: 30000
+
+  - name: run_view
+    description: >
+      View details of a specific workflow run, including job statuses.
+    parameters:
+      type: object
+      properties:
+        repo:
+          type: string
+          description: "Repository in owner/name format, or \".\" for current repo"
+        id:
+          type: integer
+          description: "Run databaseId (from run_list)"
+      required:
+        - id
+    execute:
+      command: bash tools/run_view.sh
+      timeoutMillis: 30000
+
+  # ── Search ────────────────────────────────────────────────────
+  - name: search
+    description: >
+      Search GitHub repositories, code, or issues.
+      Returns JSON results matching the query.
+    parameters:
+      type: object
+      properties:
+        type:
+          type: string
+          description: "What to search: repos, code, or issues (default repos)"
+          enum: [repos, code, issues]
+        query:
+          type: string
+          description: "Search query string"
+        limit:
+          type: integer
+          description: "Max results (default 20)"
+      required:
+        - query
+    execute:
+      command: bash tools/search.sh
+      timeoutMillis: 30000
